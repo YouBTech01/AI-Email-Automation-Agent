@@ -1,0 +1,11 @@
+include README.md
+include requirements.txt
+include .env.example
+include credentials.json.example
+include pyproject.toml
+include setup.py
+
+recursive-include templates *
+recursive-include static *
+
+global-exclude *.py[cod] __pycache__ *.so *.dylib .DS_Store *.sqlite3 *.key

@@ -95,7 +95,15 @@ def create_app() -> Flask:
 
     return app
 
-if __name__ == '__main__':
+def main():
+    """CLI entry point to launch the AI Email Automation Agent server."""
     application = create_app()
     port = int(os.getenv('PORT', 5000))
-    application.run(host='0.0.0.0', port=port, debug=True)
+    host = os.getenv('HOST', '0.0.0.0')
+    debug = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
+    print(f"Starting AI Email Automation Agent on http://{host}:{port}")
+    application.run(host=host, port=port, debug=debug)
+
+if __name__ == '__main__':
+    main()
+

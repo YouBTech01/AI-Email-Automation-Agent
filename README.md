@@ -51,35 +51,58 @@ Designed specifically for production deployment on **cPanel Python / Phusion Pas
 - Python 3.10 or higher
 - pip and virtualenv
 
-### 2. Installation
-```bash
-# 1. Clone or navigate to the directory
-cd "AI Email Automation Agent"
+### 2. Installation Options
 
-# 2. Create and activate a Python virtual environment
+#### Option A: Install as Python Package (Recommended)
+```bash
+# Clone the repository
+git clone https://github.com/YouBTech01/AI-Email-Automation-Agent.git
+cd AI-Email-Automation-Agent
+
+# Create and activate virtual environment
 python -m venv venv
 # On Windows:
 .\venv\Scripts\activate
 # On Linux/macOS:
 source venv/bin/activate
 
-# 3. Install required dependencies
-pip install -r requirements.txt
-
-# 4. Create environment file
-copy .env.example .env
+# Install the package in editable mode with CLI commands
+pip install -e .
 ```
 
-### 3. Run Development Server
+#### Option B: Standard Dependency Installation
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Environment Configuration
+```bash
+copy .env.example .env     # Windows
+# or cp .env.example .env  # Linux/macOS
+```
+
+### 4. Running the Application
+Using the installed CLI command:
+```bash
+ai-email-agent
+```
+Or directly with Python:
 ```bash
 python app.py
 ```
 Open your browser at `http://127.0.0.1:5000`.
 
-### 4. Initial Bootstrap Login
+### 5. CLI Utilities
+When installed via `pip install .` or `pip install -e .`, the following commands are available:
+- `ai-email-agent` : Launch the web application server
+- `ai-email-worker` : Run an automation cycle (`--limit 20`, `--test`)
+- `ai-email-password <user> <new_password>` : Reset user password from command line
+
+### 6. Initial Bootstrap Login
 - **Username**: `admin`
 - **Password**: `admin123`
 - *On first login, the system will prompt you to set a new strong password.*
+
 
 ---
 

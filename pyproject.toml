@@ -1,0 +1,98 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-email-automation-agent"
+version = "1.0.0"
+description = "Enterprise AI-Powered Gmail Automation and Management Platform"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "YouBTech01" }
+]
+keywords = [
+    "ai",
+    "email",
+    "automation",
+    "gmail",
+    "openrouter",
+    "flask",
+    "llm",
+    "cpanel"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Communications :: Email",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+dependencies = [
+    "Flask>=3.0.0",
+    "Flask-Session>=0.8.0",
+    "Werkzeug>=3.0.0",
+    "cryptography>=42.0.0",
+    "requests>=2.31.0",
+    "google-api-python-client>=2.115.0",
+    "google-auth>=2.27.0",
+    "google-auth-oauthlib>=1.2.0",
+    "google-auth-httplib2>=0.2.0",
+    "APScheduler>=3.10.4",
+    "python-dotenv>=1.0.1",
+    "jinja2>=3.1.3"
+]
+
+[project.optional-dependencies]
+dev = [
+    "build>=1.0.0",
+    "wheel>=0.40.0",
+    "twine>=5.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/YouBTech01/AI-Email-Automation-Agent"
+Repository = "https://github.com/YouBTech01/AI-Email-Automation-Agent.git"
+Issues = "https://github.com/YouBTech01/AI-Email-Automation-Agent/issues"
+
+[project.scripts]
+ai-email-agent = "app:main"
+ai-email-worker = "cron.automation_worker:main"
+ai-email-password = "set_password:main"
+
+[tool.setuptools]
+packages = [
+    "ai",
+    "auth",
+    "automation",
+    "chat",
+    "config",
+    "cron",
+    "database",
+    "gmail",
+    "reports",
+    "routes"
+]
+py-modules = [
+    "app",
+    "passenger_wsgi",
+    "set_password",
+    "wsgi"
+]
+
+[tool.setuptools.package-data]
+"*" = [
+    "templates/**/*.html",
+    "templates/*.html",
+    "static/css/*.css",
+    "static/js/*.js"
+]

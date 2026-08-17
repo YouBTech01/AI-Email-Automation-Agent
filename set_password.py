@@ -38,13 +38,17 @@ def set_user_password(username: str, new_pass: str):
     print(f"Success: Password for '{username}' has been updated to '{new_pass}' and bootstrap lock disabled.")
     return True
 
-if __name__ == '__main__':
+def main():
     if len(sys.argv) < 3:
-        print("Usage: python set_password.py <username> <new_password>")
-        print("Example: python set_password.py admin AdminSecure2026!")
+        print("Usage: ai-email-password <username> <new_password> (or python set_password.py <username> <new_password>)")
+        print("Example: ai-email-password admin AdminSecure2026!")
         sys.exit(1)
 
     username_arg = sys.argv[1].strip()
     new_pass_arg = sys.argv[2]
     success = set_user_password(username_arg, new_pass_arg)
     sys.exit(0 if success else 1)
+
+if __name__ == '__main__':
+    main()
+
