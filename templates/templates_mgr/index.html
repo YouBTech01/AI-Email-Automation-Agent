@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Email Templates - AI Email Automation Agent{% endblock %}
+{% block page_title %}Email Template Manager{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div>
+    <h1 style="font-size: 1.25rem; font-weight: 700;">Reusable Email Templates</h1>
+    <p style="font-size: 0.875rem; color: var(--text-muted);">Manage email templates with dynamic variable interpolation.</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('template-modal'); resetTemplateForm();">+ Create New Template</button>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Template Name</th>
+          <th>Category</th>
+          <th>Subject Template</th>
+          <th>Variables</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if templates %}
+          {% for t in templates %}
+            <tr>
+              <td style="font-weight: 600;">{{ t.name }}</td>
+              <td><span class="chip chip-secondary">{{ t.category }}</span></td>
+              <td><code>{{ t.subject }}</code></td>
+              <td style="font-size: 11px; color: var(--text-muted);">{{ t.variables }}</td>
+              <td>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn btn-sm btn-outline" onclick='previewTemplate({{ t | tojson }})'>👁 Preview</button>
+                  <button class="btn btn-sm btn-outline" onclick='editTemplate({{ t | tojson }})'>Edit</button>
+                  <button class="btn btn-sm btn-outline" style="color: var(--danger);" onclick="deleteTemplate({{ t.id }})">Delete</button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 24px; color: var(--text-muted);">
+              No email templates configured.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Template Modal -->
+<div class="modal-overlay" id="template-modal">
+  <div class="modal-dialog" style="max-width: 650px;">
+    <h3 id="template-modal-title" style="margin-bottom: 16px;">Create Email Template</h3>
+    <form onsubmit="saveTemplate(event)">
+      <input type="hidden" id="template-id">
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label">Template Name</label>
+          <input type="text" id="template-name" class="form-control" placeholder="e.g. Client Proposal Followup" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <input type="text" id="template-category" class="form-control" placeholder="e.g. business, support">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Subject Line (supports variables)</label>
+        <input type="text" id="template-subject" class="form-control" placeholder="Re: {{subject}}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">HTML Email Body</label>
+        <textarea id="template-html" class="form-control" rows="6" placeholder="<p>Hi {{recipient_name}},</p><p>{{ai_response}}</p>" required></textarea>
+      </div>
+
+      <div style="background: var(--bg-surface-secondary); padding: 10px; border-radius: var(--radius-md); font-size: 11px; margin-bottom: 16px;">
+        <strong>Supported Variables:</strong> <code>{{recipient_name}}</code>, <code>{{sender_name}}</code>, <code>{{company}}</code>, <code>{{subject}}</code>, <code>{{ai_response}}</code>, <code>{{date}}</code>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('template-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Template</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal-dialog" style="max-width: 600px;">
+    <h3 style="margin-bottom: 14px;">Live Template Preview</h3>
+    <div style="margin-bottom: 12px;">
+      <span style="font-weight: 600; font-size: 0.875rem;">Subject:</span>
+      <span id="preview-subject-text" style="color: var(--primary);"></span>
+    </div>
+    <div id="preview-body-content" style="border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius-md); background: var(--bg-surface-secondary); min-height: 150px;"></div>
+    <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+      <button class="btn btn-outline" onclick="closeModal('preview-modal')">Close</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function resetTemplateForm() {
+  document.getElementById('template-id').value = '';
+  document.getElementById('template-name').value = '';
+  document.getElementById('template-category').value = 'general';
+  document.getElementById('template-subject').value = 'Re: {{subject}}';
+  document.getElementById('template-html').value = '';
+}
+
+function editTemplate(t) {
+  document.getElementById('template-id').value = t.id;
+  document.getElementById('template-name').value = t.name;
+  document.getElementById('template-category').value = t.category;
+  document.getElementById('template-subject').value = t.subject;
+  document.getElementById('template-html').value = t.body_html;
+  openModal('template-modal');
+}
+
+async function saveTemplate(e) {
+  e.preventDefault();
+  const payload = {
+    id: document.getElementById('template-id').value || null,
+    name: document.getElementById('template-name').value.trim(),
+    category: document.getElementById('template-category').value.trim(),
+    subject: document.getElementById('template-subject').value.trim(),
+    body_html: document.getElementById('template-html').value.trim()
+  };
+  const res = await apiFetch('/templates/api/save', { method: 'POST', body: JSON.stringify(payload) });
+  if ((await res.json()).success) {
+    showToast("Template saved!", "success");
+    window.location.reload();
+  }
+}
+
+async function previewTemplate(t) {
+  const res = await apiFetch('/templates/api/preview', {
+    method: 'POST',
+    body: JSON.stringify({ subject: t.subject, body_html: t.body_html })
+  });
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById('preview-subject-text').innerText = data.subject;
+    document.getElementById('preview-body-content').innerHTML = data.html;
+    openModal('preview-modal');
+  }
+}
+
+async function deleteTemplate(id) {
+  if (!confirm("Delete this template?")) return;
+  const res = await apiFetch(`/templates/api/${id}`, { method: 'DELETE' });
+  if ((await res.json()).success) window.location.reload();
+}
+</script>
+{% endblock %}

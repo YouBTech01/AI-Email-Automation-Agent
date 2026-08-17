@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile - AI Email Automation Agent{% endblock %}
+{% block page_title %}Account Profile & Security{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+  <!-- Profile Info -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Profile Information</h2>
+    </div>
+    <form method="POST" action="{{ url_for('auth.profile') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="update_info">
+
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" value="{{ user.username }}" disabled>
+        <small style="color: var(--text-muted); font-size: 11px;">Username cannot be changed.</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input type="email" id="email" name="email" class="form-control" value="{{ user.email or '' }}" placeholder="admin@example.com">
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button type="submit" class="btn btn-primary">Save Profile Info</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Change Password -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Change Password</h2>
+    </div>
+    <form method="POST" action="{{ url_for('auth.profile') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="change_password">
+
+      <div class="form-group">
+        <label class="form-label" for="current_password">Current Password</label>
+        <input type="password" id="current_password" name="current_password" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="new_password">New Password</label>
+        <input type="password" id="new_password" name="new_password" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirm_password">Confirm New Password</label>
+        <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button type="submit" class="btn btn-secondary">Update Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

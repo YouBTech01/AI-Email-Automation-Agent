@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Access Denied - 403{% endblock %}
+
+{% block content %}
+<div style="min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+  <div style="font-size: 64px; margin-bottom: 16px;">🛑</div>
+  <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 10px;">403 - Access Forbidden</h1>
+  <p style="color: var(--text-muted); max-width: 480px; margin-bottom: 24px;">
+    {{ description or "You do not have sufficient permissions to access this feature or resource." }}
+  </p>
+  <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">Return to Dashboard</a>
+</div>
+{% endblock %}

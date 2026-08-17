@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - AI Email Automation Agent{% endblock %}
+{% block page_title %}Settings & Integrations{% endblock %}
+
+{% block content %}
+<div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px; overflow-x: auto;">
+  <button class="btn btn-secondary settings-tab-btn active" onclick="switchSettingsTab('gmail', this)">✉️ Gmail & OAuth</button>
+  <button class="btn btn-secondary settings-tab-btn" onclick="switchSettingsTab('ai', this)">🤖 AI Providers & Models</button>
+  <button class="btn btn-secondary settings-tab-btn" onclick="switchSettingsTab('security', this)">👥 Users & Security</button>
+  <button class="btn btn-secondary settings-tab-btn" onclick="switchSettingsTab('backup', this)">💾 Database & Backups</button>
+</div>
+
+<!-- TAB 1: Gmail & Google OAuth -->
+<div id="tab-gmail" class="settings-tab-pane active">
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+      <h2 class="card-title">Google OAuth 2.0 Client Credentials</h2>
+    </div>
+    <form onsubmit="saveOAuthCredentials(event)">
+      <div class="form-group">
+        <label class="form-label" for="oauth-client-id">Google Client ID</label>
+        <input type="text" id="oauth-client-id" class="form-control" value="{{ oauth_client_id }}" placeholder="e.g. 123456789-abcdef.apps.googleusercontent.com" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="oauth-client-secret">Google Client Secret</label>
+        <input type="password" id="oauth-client-secret" class="form-control" value="{{ oauth_client_secret }}" placeholder="••••••••••••••••" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="oauth-redirect-uri">OAuth Redirect URI</label>
+        <input type="text" id="oauth-redirect-uri" class="form-control" value="{{ oauth_redirect_uri }}" required>
+        <small style="color: var(--text-muted); font-size: 11px;">Make sure this exact URI is authorized in your Google Cloud Console.</small>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <button type="submit" class="btn btn-primary">Save OAuth Credentials</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Connected Gmail Accounts</h2>
+      <a href="{{ url_for('gmail.connect') }}" class="btn btn-primary btn-sm">+ Connect Gmail Account</a>
+    </div>
+
+    {% if gmail_accounts %}
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for acc in gmail_accounts %}
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg-surface-secondary); border-radius: var(--radius-md);">
+            <div>
+              <div style="font-weight: 600; font-size: 0.9375rem; display: flex; align-items: center; gap: 8px;">
+                {{ acc.email }}
+                {% if acc.is_primary %}<span class="chip chip-primary" style="font-size: 10px;">PRIMARY</span>{% endif %}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                Status: {% if acc.is_connected %}<span style="color: var(--success); font-weight: 600;">Connected</span>{% else %}<span style="color: var(--danger);">Disconnected</span>{% endif %} | Last Sync: {{ acc.last_sync_at or 'Never' }}
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              {% if acc.is_connected %}
+                <form method="POST" action="{{ url_for('gmail.disconnect', account_id=acc.id) }}" onsubmit="return confirm('Disconnect this Gmail account?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-sm btn-outline" style="color: var(--danger);">Disconnect</button>
+                </form>
+              {% else %}
+                <a href="{{ url_for('gmail.connect') }}" class="btn btn-sm btn-primary">Reconnect</a>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+        No Gmail accounts connected yet.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- TAB 2: AI Providers & OpenRouter Models -->
+<div id="tab-ai" class="settings-tab-pane" style="display: none;">
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+      <h2 class="card-title">Configured AI Providers</h2>
+      <button class="btn btn-primary btn-sm" onclick="openModal('provider-modal'); resetProviderForm();">+ Add Provider</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      {% for p in ai_providers %}
+        <div style="padding: 16px; background: var(--bg-surface-secondary); border-radius: var(--radius-md); border-left: 4px solid {% if p.is_primary %}var(--primary){% else %}var(--border-color){% endif %};">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div>
+              <div style="font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                {{ p.display_name }}
+                {% if p.is_primary %}<span class="chip chip-primary" style="font-size: 10px;">PRIMARY</span>{% endif %}
+                {% if p.is_active %}<span class="chip chip-success" style="font-size: 10px;">ACTIVE</span>{% else %}<span class="chip chip-danger" style="font-size: 10px;">INACTIVE</span>{% endif %}
+              </div>
+              <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 4px;">
+                Default Model: <code>{{ p.default_model }}</code> {% if p.fallback_model %}| Fallback: <code>{{ p.fallback_model }}</code>{% endif %}
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-sm btn-secondary" onclick="testProvider({{ p.id }})">⚡ Test Connection</button>
+              <button class="btn btn-sm btn-outline" onclick='editProvider({{ p | tojson }})'>Edit</button>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Live OpenRouter Model Browser -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">🌐 Live OpenRouter Model Catalog</h2>
+        <p style="font-size: 0.75rem; color: var(--text-muted);">Explore hundreds of AI models available via OpenRouter.</p>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="loadOpenRouterModels()">🔄 Refresh Catalog</button>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 14px;">
+      <input type="text" id="model-filter-input" class="form-control" placeholder="Search models (e.g. gpt-4o, claude, gemini, llama)..." oninput="filterModelsList(this.value)">
+    </div>
+
+    <div id="openrouter-models-list" style="max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+      <div style="text-align: center; padding: 20px; color: var(--text-muted);">Click "Refresh Catalog" to browse live OpenRouter models.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: Users & Security -->
+<div id="tab-security" class="settings-tab-pane" style="display: none;">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">System Users & Access Control</h2>
+      <button class="btn btn-primary btn-sm" onclick="openModal('user-modal');">+ Create User</button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Active</th>
+            <th>Last Login</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr>
+              <td style="font-weight: 600;">{{ u.username }}</td>
+              <td>{{ u.email or '-' }}</td>
+              <td><span class="chip chip-primary">{{ u.role_name or 'Admin' }}</span></td>
+              <td>{% if u.is_active %}<span class="chip chip-success">Active</span>{% else %}<span class="chip chip-danger">Disabled</span>{% endif %}</td>
+              <td style="font-size: 12px; color: var(--text-muted);">{{ u.last_login_at or 'Never' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: Database & Backups -->
+<div id="tab-backup" class="settings-tab-pane" style="display: none;">
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Instant SQLite Database Backup</h2>
+        <p style="font-size: 0.8125rem; color: var(--text-muted);">Create snapshot backups of your database, settings, and workflows.</p>
+      </div>
+      <button class="btn btn-primary" onclick="createBackup()">💾 Create Snapshot Backup</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Available Backups</h2>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Backup Filename</th>
+            <th>Size</th>
+            <th>Created At</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if backups %}
+            {% for b in backups %}
+              <tr>
+                <td style="font-weight: 600;">{{ b.name }}</td>
+                <td>{{ b.size_kb }} KB</td>
+                <td style="font-size: 12px; color: var(--text-muted);">{{ b.modified }}</td>
+                <td>
+                  <a href="{{ url_for('settings.download_backup', filename=b.name) }}" class="btn btn-sm btn-outline">⬇ Download</a>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 24px; color: var(--text-muted);">
+                No backups created yet.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- AI Provider Modal -->
+<div class="modal-overlay" id="provider-modal">
+  <div class="modal-dialog">
+    <h3 id="provider-modal-title" style="margin-bottom: 16px;">Configure AI Provider</h3>
+    <form onsubmit="saveProvider(event)">
+      <input type="hidden" id="provider-id">
+      
+      <div class="form-group">
+        <label class="form-label">Provider Name (Identifier)</label>
+        <input type="text" id="provider-name" class="form-control" placeholder="e.g. openrouter" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Display Name</label>
+        <input type="text" id="provider-display-name" class="form-control" placeholder="e.g. OpenRouter Primary" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Provider Type</label>
+        <select id="provider-type" class="form-select">
+          <option value="openrouter">OpenRouter</option>
+          <option value="openai">OpenAI Direct</option>
+          <option value="groq">Groq Cloud</option>
+          <option value="deepseek">DeepSeek</option>
+          <option value="custom">Custom OpenAI-Compatible Endpoint</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Base URL</label>
+        <input type="text" id="provider-base-url" class="form-control" value="https://openrouter.ai/api/v1" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input type="password" id="provider-api-key" class="form-control" placeholder="sk-or-v1-••••••••••••">
+        <small style="color: var(--text-muted); font-size: 11px;">Encrypted at rest using AES-128/256.</small>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label">Default Model ID</label>
+          <input type="text" id="provider-default-model" class="form-control" value="openai/gpt-4o-mini" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fallback Model ID</label>
+          <input type="text" id="provider-fallback-model" class="form-control" value="google/gemini-2.0-flash-exp:free">
+        </div>
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+        <label class="switch">
+          <input type="checkbox" id="provider-is-primary" checked>
+          <span class="slider"></span>
+        </label>
+        <span style="font-size: 0.875rem;">Set as Primary Provider</span>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('provider-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Provider</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal-dialog">
+    <h3 style="margin-bottom: 16px;">Create System User</h3>
+    <form onsubmit="createUser(event)">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="new-user-username" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="new-user-email" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="new-user-password" class="form-control" required>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('user-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create User</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let cachedOpenRouterModels = [];
+
+function switchSettingsTab(tabId, btn) {
+  document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+  document.querySelectorAll('.settings-tab-pane').forEach(p => p.style.display = 'none');
+  btn.classList.add('active', 'btn-primary');
+  document.getElementById(`tab-${tabId}`).style.display = 'block';
+}
+
+async function saveOAuthCredentials(e) {
+  e.preventDefault();
+  const payload = {
+    client_id: document.getElementById('oauth-client-id').value.trim(),
+    client_secret: document.getElementById('oauth-client-secret').value.trim(),
+    redirect_uri: document.getElementById('oauth-redirect-uri').value.trim()
+  };
+  const res = await apiFetch('/settings/api/oauth-credentials', { method: 'POST', body: JSON.stringify(payload) });
+  if ((await res.json()).success) {
+    showToast("Google OAuth credentials saved!", "success");
+  }
+}
+
+function resetProviderForm() {
+  document.getElementById('provider-id').value = '';
+  document.getElementById('provider-name').value = '';
+  document.getElementById('provider-display-name').value = '';
+  document.getElementById('provider-type').value = 'openrouter';
+  document.getElementById('provider-base-url').value = 'https://openrouter.ai/api/v1';
+  document.getElementById('provider-api-key').value = '';
+  document.getElementById('provider-default-model').value = 'openai/gpt-4o-mini';
+  document.getElementById('provider-fallback-model').value = 'google/gemini-2.0-flash-exp:free';
+  document.getElementById('provider-is-primary').checked = false;
+}
+
+function editProvider(p) {
+  document.getElementById('provider-id').value = p.id;
+  document.getElementById('provider-name').value = p.name;
+  document.getElementById('provider-display-name').value = p.display_name;
+  document.getElementById('provider-type').value = p.provider_type;
+  document.getElementById('provider-base-url').value = p.base_url;
+  document.getElementById('provider-api-key').value = '';
+  document.getElementById('provider-default-model').value = p.default_model;
+  document.getElementById('provider-fallback-model').value = p.fallback_model || '';
+  document.getElementById('provider-is-primary').checked = Boolean(p.is_primary);
+  openModal('provider-modal');
+}
+
+async function saveProvider(e) {
+  e.preventDefault();
+  const payload = {
+    id: document.getElementById('provider-id').value || null,
+    name: document.getElementById('provider-name').value.trim(),
+    display_name: document.getElementById('provider-display-name').value.trim(),
+    provider_type: document.getElementById('provider-type').value,
+    base_url: document.getElementById('provider-base-url').value.trim(),
+    api_key: document.getElementById('provider-api-key').value.trim(),
+    default_model: document.getElementById('provider-default-model').value.trim(),
+    fallback_model: document.getElementById('provider-fallback-model').value.trim(),
+    is_primary: document.getElementById('provider-is-primary').checked ? 1 : 0
+  };
+  const res = await apiFetch('/settings/api/providers/save', { method: 'POST', body: JSON.stringify(payload) });
+  if ((await res.json()).success) {
+    showToast("Provider settings saved!", "success");
+    window.location.reload();
+  }
+}
+
+async function testProvider(providerId) {
+  showToast("Testing AI provider connectivity...", "info");
+  const res = await apiFetch('/settings/api/providers/test', {
+    method: 'POST',
+    body: JSON.stringify({ id: providerId })
+  });
+  const data = await res.json();
+  if (data.success) {
+    showToast(`Provider connected successfully! Response: ${data.content}`, "success");
+  } else {
+    showToast(`Connection test failed: ${data.error}`, "danger");
+  }
+}
+
+async function loadOpenRouterModels() {
+  const container = document.getElementById('openrouter-models-list');
+  container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">Fetching OpenRouter live catalog...</div>';
+  
+  try {
+    const res = await apiFetch('/settings/api/openrouter/models');
+    const data = await res.json();
+    cachedOpenRouterModels = data.models || [];
+    renderModelsList(cachedOpenRouterModels);
+  } catch (err) {
+    container.innerHTML = '<div style="color:var(--danger); text-align:center;">Failed to load models.</div>';
+  }
+}
+
+function renderModelsList(models) {
+  const container = document.getElementById('openrouter-models-list');
+  container.innerHTML = '';
+  if (models.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No matching models found.</div>';
+    return;
+  }
+
+  models.slice(0, 50).forEach(m => {
+    const item = document.createElement('div');
+    item.style.cssText = 'padding: 10px 14px; background: var(--bg-surface-secondary); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;';
+    item.innerHTML = `
+      <div>
+        <div style="font-weight: 600; font-size: 0.875rem;">${escapeHtml(m.name)} <code>(${escapeHtml(m.id)})</code></div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Context: ${(m.context_length/1000).toFixed(0)}k tokens | Pricing: ${m.pricing_prompt_m}</div>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="selectModelForProvider('${escapeHtml(m.id)}')">Use Model</button>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function filterModelsList(query) {
+  if (!query) {
+    renderModelsList(cachedOpenRouterModels);
+    return;
+  }
+  const q = query.toLowerCase();
+  const filtered = cachedOpenRouterModels.filter(m => m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q));
+  renderModelsList(filtered);
+}
+
+function selectModelForProvider(modelId) {
+  document.getElementById('provider-default-model').value = modelId;
+  openModal('provider-modal');
+}
+
+async function createUser(e) {
+  e.preventDefault();
+  const payload = {
+    username: document.getElementById('new-user-username').value.trim(),
+    email: document.getElementById('new-user-email').value.trim(),
+    password: document.getElementById('new-user-password').value
+  };
+  const res = await apiFetch('/auth/api/users', { method: 'POST', body: JSON.stringify(payload) });
+  if ((await res.json()).success) {
+    showToast("User created successfully!", "success");
+    window.location.reload();
+  }
+}
+
+async function createBackup() {
+  showToast("Generating snapshot backup...", "info");
+  const res = await apiFetch('/settings/api/backup/create', { method: 'POST' });
+  if ((await res.json()).success) {
+    showToast("Database backup created!", "success");
+    window.location.reload();
+  }
+}
+</script>
+{% endblock %}

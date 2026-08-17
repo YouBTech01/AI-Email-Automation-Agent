@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}AI Assistant Chat - AI Email Automation Agent{% endblock %}
+{% block page_title %}AI Assistant Chat{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+  <!-- Sessions Sidebar -->
+  <div class="chat-sessions-sidebar">
+    <div class="chat-sessions-header">
+      <button class="btn btn-primary btn-sm" style="width: 100%;" onclick="startNewChat()">
+        + New Conversation
+      </button>
+    </div>
+    <div class="chat-sessions-list" id="chat-sessions-list">
+      <!-- Populated via chat.js -->
+    </div>
+  </div>
+
+  <!-- Main Chat Pane -->
+  <div class="chat-main-pane">
+    <div class="chat-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-weight: 600; font-size: 0.9375rem;">Model:</span>
+        <select id="chat-provider-select" class="form-select" style="width: auto; padding: 4px 10px; font-size: 0.8125rem;">
+          {% for p in providers %}
+            <option value="{{ p.id }}">{{ p.display_name }} ({{ p.default_model }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <button class="btn btn-sm btn-outline" onclick="exportCurrentChat()" title="Download conversation as Markdown">
+          ⬇ Export Chat
+        </button>
+      </div>
+    </div>
+
+    <!-- Message Bubble Stream -->
+    <div class="chat-messages-container" id="chat-messages-container">
+      <div class="chat-message assistant">
+        <div class="chat-avatar assistant">AI</div>
+        <div class="chat-bubble">
+          Hello! I am your AI Email Automation Agent. I can search messages, summarize threads, prepare drafts, reply, and manage your automations safely through official Gmail APIs. How can I assist you?
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Suggestion Chips -->
+    <div style="padding: 6px 20px; display: flex; gap: 8px; overflow-x: auto; background: var(--bg-surface);">
+      <button class="chip" onclick="document.getElementById('chat-input-textarea').value='Show me all important emails from today.'; sendChatMessage();">
+        📊 Today's email report
+      </button>
+      <button class="chip" onclick="document.getElementById('chat-input-textarea').value='Find emails that need my attention.'; sendChatMessage();">
+        ⚠️ Emails needing attention
+      </button>
+      <button class="chip" onclick="document.getElementById('chat-input-textarea').value='List all active automations.'; sendChatMessage();">
+        ⚡ List active automations
+      </button>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="chat-input-container">
+      <div class="chat-input-box">
+        <textarea id="chat-input-textarea" placeholder="Ask anything... e.g. 'Reply to John and tell him I will review tomorrow'" rows="1"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="sendChatMessage()" style="height: 48px; padding: 0 20px;">
+        Send ↗
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

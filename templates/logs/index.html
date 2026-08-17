@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs - AI Email Automation Agent{% endblock %}
+{% block page_title %}Activity & Audit Trail{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div>
+    <h1 style="font-size: 1.25rem; font-weight: 700;">System Audit & Action Logs</h1>
+    <p style="font-size: 0.875rem; color: var(--text-muted);">Real-time log of every AI action, Gmail API call, and authentication event.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('logs.export_csv') }}" class="btn btn-secondary">⬇ Export CSV</a>
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="card" style="margin-bottom: 20px; padding: 14px 20px;">
+  <form method="GET" action="{{ url_for('logs.index') }}" style="display: flex; gap: 14px; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <label class="form-label" style="margin: 0;">Category:</label>
+      <select name="category" class="form-select" style="width: auto; padding: 6px 12px;" onchange="this.form.submit()">
+        <option value="ALL" {% if current_cat == 'ALL' %}selected{% endif %}>All Categories</option>
+        <option value="AI" {% if current_cat == 'AI' %}selected{% endif %}>AI Operations</option>
+        <option value="GMAIL" {% if current_cat == 'GMAIL' %}selected{% endif %}>Gmail API</option>
+        <option value="AUTOMATION" {% if current_cat == 'AUTOMATION' %}selected{% endif %}>Automations</option>
+        <option value="AUTH" {% if current_cat == 'AUTH' %}selected{% endif %}>Authentication</option>
+        <option value="SECURITY" {% if current_cat == 'SECURITY' %}selected{% endif %}>Security & Gates</option>
+      </select>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <label class="form-label" style="margin: 0;">Status:</label>
+      <select name="status" class="form-select" style="width: auto; padding: 6px 12px;" onchange="this.form.submit()">
+        <option value="ALL" {% if current_status == 'ALL' %}selected{% endif %}>All Statuses</option>
+        <option value="SUCCESS" {% if current_status == 'SUCCESS' %}selected{% endif %}>SUCCESS</option>
+        <option value="FAILED" {% if current_status == 'FAILED' %}selected{% endif %}>FAILED</option>
+        <option value="WARNING" {% if current_status == 'WARNING' %}selected{% endif %}>WARNING</option>
+        <option value="BLOCKED" {% if current_status == 'BLOCKED' %}selected{% endif %}>BLOCKED</option>
+      </select>
+    </div>
+  </form>
+</div>
+
+<!-- Logs Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Category</th>
+          <th>Action</th>
+          <th>Actor</th>
+          <th>Status</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if logs %}
+          {% for l in logs %}
+            <tr>
+              <td style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">{{ l.created_at }}</td>
+              <td>
+                <span class="chip chip-primary" style="font-size: 10px;">{{ l.category }}</span>
+              </td>
+              <td style="font-weight: 500;">{{ l.action }}</td>
+              <td><code>{{ l.actor }}</code></td>
+              <td>
+                <span class="chip {% if l.status == 'SUCCESS' %}chip-success{% elif l.status == 'FAILED' %}chip-danger{% elif l.status == 'BLOCKED' %}chip-danger{% else %}chip-warning{% endif %}">
+                  {{ l.status }}
+                </span>
+              </td>
+              <td style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ l.details_json }}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">
+              No activity logs found matching the filter.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

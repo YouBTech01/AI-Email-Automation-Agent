@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - AI Email Automation Agent{% endblock %}
+
+{% block content %}
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 420px; padding: 32px; box-shadow: var(--shadow-xl);">
+    <div style="text-align: center; margin-bottom: 28px;">
+      <div style="width: 56px; height: 56px; margin: 0 auto 16px; border-radius: var(--radius-xl); background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: white;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      </div>
+      <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 6px;">Administrator Login</h1>
+      <p style="font-size: 0.875rem; color: var(--text-muted);">Sign in to access your AI Email Automation Agent</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next', '')) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input type="text" id="username" name="username" class="form-control" placeholder="admin" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="••••••••••••" required>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;" {% if rate_limited %}disabled{% endif %}>
+          Sign In
+        </button>
+      </div>
+    </form>
+
+    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.75rem; color: var(--text-muted);">
+      Initial Bootstrap Credentials: <code>admin</code> / <code>admin123</code><br>
+      <span style="color: var(--warning);">* Mandatory password change required on first login</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Automated Workflows - AI Email Automation Agent{% endblock %}
+{% block page_title %}Automated Workflows & Rules{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div>
+    <h1 style="font-size: 1.25rem; font-weight: 700;">Automation Rules Engine</h1>
+    <p style="font-size: 0.875rem; color: var(--text-muted);">Create safe, multi-level AI automation workflows for your Gmail inbox.</p>
+  </div>
+  <div style="display: flex; gap: 12px;">
+    <button class="btn btn-secondary" onclick="runAutomationTestCycle()">⚡ Run Single Test Cycle</button>
+    <a href="{{ url_for('automation.builder') }}" class="btn btn-primary">+ Create New Automation</a>
+  </div>
+</div>
+
+<!-- Automations List Card -->
+<div class="card" style="margin-bottom: 28px;">
+  <div class="card-header">
+    <h2 class="card-title">Configured Workflows</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Workflow Name</th>
+          <th>Trigger</th>
+          <th>Approval Mode</th>
+          <th>Confidence</th>
+          <th>Total Runs</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if automations %}
+          {% for a in automations %}
+            <tr>
+              <td>
+                <div style="font-weight: 600;">{{ a.name }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ a.description or 'No description' }}</div>
+              </td>
+              <td><span class="chip chip-primary">{{ a.trigger_type }}</span></td>
+              <td>
+                {% if a.approval_mode == 'trusted_auto' %}
+                  <span class="chip chip-danger" title="Level 3: Auto-send if confidence met">⚡ Trusted Auto</span>
+                {% elif a.approval_mode == 'approval_required' %}
+                  <span class="chip chip-warning" title="Level 2: Pending admin approval">🔒 Approval Required</span>
+                {% else %}
+                  <span class="chip chip-success" title="Level 1: Draft only">📝 Draft Only</span>
+                {% endif %}
+              </td>
+              <td>{{ a.confidence_threshold }}%</td>
+              <td>{{ a.total_runs }} runs ({{ a.successful_runs }} ok)</td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox" {% if a.status == 'ACTIVE' %}checked{% endif %} onchange="toggleAutomation({{ a.id }})">
+                  <span class="slider"></span>
+                </label>
+              </td>
+              <td>
+                <div style="display: flex; gap: 6px;">
+                  <a href="{{ url_for('automation.builder', automation_id=a.id) }}" class="btn btn-sm btn-outline">Edit</a>
+                  <button class="btn btn-sm btn-outline" style="color: var(--danger);" onclick="deleteAutomation({{ a.id }})">Delete</button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-muted);">
+              No automations created yet. Click "+ Create New Automation" above to get started.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent Automation Runs & Pending Approvals -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Recent Automation Execution Logs & Pending Approvals</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Automation</th>
+          <th>Trigger Event</th>
+          <th>Confidence</th>
+          <th>Decision / Status</th>
+          <th>Timestamp</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if recent_runs %}
+          {% for r in recent_runs %}
+            <tr>
+              <td>#{{ r.id }}</td>
+              <td style="font-weight: 600;">{{ r.automation_name }}</td>
+              <td>{{ r.trigger_event }}</td>
+              <td>
+                {% if r.confidence_score %}
+                  <span style="font-weight: 600; color: {% if r.confidence_score >= 85 %}var(--success){% else %}var(--warning){% endif %};">
+                    {{ r.confidence_score }}%
+                  </span>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                <span class="chip {% if r.status == 'COMPLETED' %}chip-success{% elif r.status == 'FAILED' %}chip-danger{% else %}chip-warning{% endif %}">
+                  {{ r.status }}
+                </span>
+                <span style="font-size: 11px; color: var(--text-muted); margin-left: 6px;">{{ r.decision_reason or '' }}</span>
+              </td>
+              <td style="font-size: 12px; color: var(--text-muted);">{{ r.started_at }}</td>
+              <td>
+                {% if 'pending_approval' in (r.result_data_json or '') %}
+                  <button class="btn btn-sm btn-primary" onclick="approveAutomationRun({{ r.id }})">✓ Approve & Send</button>
+                {% else %}
+                  <span style="color: var(--text-muted); font-size: 11px;">Completed</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">
+              No automation runs recorded yet.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/automation.js') }}"></script>
+<script>
+async function approveAutomationRun(runId) {
+  try {
+    const res = await apiFetch(`/automations/api/runs/${runId}/approve`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      showToast("Approved and reply sent successfully!", "success");
+      setTimeout(() => window.location.reload(), 600);
+    } else {
+      showToast(data.error || "Approval failed", "danger");
+    }
+  } catch (err) {
+    showToast("Error approving run", "danger");
+  }
+}
+</script>
+{% endblock %}

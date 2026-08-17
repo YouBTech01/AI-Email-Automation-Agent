@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}{% if automation %}Edit Workflow - {{ automation.name }}{% else %}New Automation Workflow{% endif %}{% endblock %}
+{% block page_title %}{% if automation %}Edit Automation: {{ automation.name }}{% else %}Create Automation Workflow{% endif %}{% endblock %}
+
+{% block content %}
+<form id="automation-builder-form" onsubmit="saveAutomation(event)">
+  <input type="hidden" id="automation-id" value="{{ automation.id if automation else '' }}">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <a href="{{ url_for('automation.index') }}" class="btn btn-outline">← Back to Automations</a>
+    <div style="display: flex; gap: 10px;">
+      <button type="button" class="btn btn-secondary" onclick="toggleAIAssistantBox()">🪄 AI Auto-Setup Assistant</button>
+      <button type="submit" class="btn btn-primary btn-lg">💾 Save Automation Workflow</button>
+    </div>
+  </div>
+
+  <!-- Easy Mode: AI Automatic Assistant Banner -->
+  <div id="ai-builder-assistant-card" class="card" style="margin-bottom: 24px; border: 1.5px solid var(--primary); background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(var(--primary-rgb, 67, 97, 238), 0.06) 100%);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 24px;">🪄</span>
+        <div>
+          <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 2px;">AI Auto-Setup (Easy Mode for Beginners)</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Describe what you want to automate in plain English, and AI will configure all triggers, conditions, and actions automatically!</p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline" style="border: none; font-size: 16px;" onclick="toggleAIAssistantBox()">✕</button>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+      <input type="text" id="ai-assistant-prompt-input" class="form-control" placeholder="e.g. When a client asks about pricing or quotes, draft a polite reply with our pricing tiers for my review..." style="flex: 1; font-size: 14px;">
+      <button type="button" id="btn-generate-ai-workflow" class="btn btn-primary" onclick="generateWorkflowWithAI()" style="white-space: nowrap;">
+        <span id="ai-generate-btn-text">🪄 Auto-Fill Workflow</span>
+      </button>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Starter Recipes:</span>
+      <button type="button" class="badge-chip" onclick="applyRecipe('support')">💬 Customer Support (Draft)</button>
+      <button type="button" class="badge-chip" onclick="applyRecipe('pricing')">💰 Pricing Inquiries</button>
+      <button type="button" class="badge-chip" onclick="applyRecipe('refund')">🛡️ Refund & Dispute Guard</button>
+      <button type="button" class="badge-chip" onclick="applyRecipe('vip')">⭐ VIP Client Priority</button>
+      <button type="button" class="badge-chip" onclick="applyRecipe('newsletter')">📦 Auto-Archive Newsletters</button>
+    </div>
+  </div>
+
+  <div class="builder-canvas">
+    <!-- General Workflow Details -->
+    <div class="builder-node">
+      <div class="builder-node-header">
+        <span style="font-size: 20px;">⚙️</span>
+        <span>General Configuration</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="automation-name">Workflow Name</label>
+        <input type="text" id="automation-name" class="form-control" value="{{ automation.name if automation else '' }}" placeholder="e.g. Customer Support Auto-Draft" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="automation-description">Description (Optional)</label>
+        <input type="text" id="automation-description" class="form-control" value="{{ automation.description if automation else '' }}" placeholder="e.g. Automatically prepare reply drafts when client sends inquiry">
+      </div>
+    </div>
+
+    <div class="node-connector"></div>
+
+    <!-- Node 1: Trigger -->
+    <div class="builder-node" style="border-left: 4px solid var(--primary);">
+      <div class="builder-node-header">
+        <span style="font-size: 20px;">⚡</span>
+        <span>1. Trigger: When this happens</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="automation-trigger-type">Trigger Type</label>
+        <select id="automation-trigger-type" class="form-select">
+          <option value="new_email" {% if automation and automation.trigger_type == 'new_email' %}selected{% endif %}>📥 Any New Gmail Message</option>
+          <option value="unread_email" {% if automation and automation.trigger_type == 'unread_email' %}selected{% endif %}>✉️ New Unread Message</option>
+          <option value="sender_match" {% if automation and automation.trigger_type == 'sender_match' %}selected{% endif %}>👤 Email from specific sender/domain</option>
+          <option value="keyword_match" {% if automation and automation.trigger_type == 'keyword_match' %}selected{% endif %}>🔍 Email containing specific keyword</option>
+          <option value="has_attachment" {% if automation and automation.trigger_type == 'has_attachment' %}selected{% endif %}>📎 Email with attachment</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="node-connector"></div>
+
+    <!-- Node 2: Conditions -->
+    <div class="builder-node" style="border-left: 4px solid var(--secondary);">
+      <div class="builder-node-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">🎯</span>
+          <span style="font-weight: 600;">2. Conditions: Only if all of these match</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="addConditionRow()">+ Add Condition</button>
+      </div>
+      
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+        Define the matching rules for incoming emails. Leave value blank or remove row if no condition filter is required.
+      </p>
+
+      <div id="conditions-list-container"></div>
+    </div>
+
+    <div class="node-connector"></div>
+
+    <!-- Node 3: AI Actions -->
+    <div class="builder-node" style="border-left: 4px solid var(--accent);">
+      <div class="builder-node-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">🤖</span>
+          <span style="font-weight: 600;">3. Actions: What the AI should execute</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="addActionRow()">+ Add Action</button>
+      </div>
+
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+        Choose what steps the AI automation engine will execute when triggers and conditions are met.
+      </p>
+
+      <div id="actions-list-container"></div>
+    </div>
+
+    <div class="node-connector"></div>
+
+    <!-- Node 4: Safety & Confidence Gate -->
+    <div class="builder-node" style="border-left: 4px solid var(--warning);">
+      <div class="builder-node-header">
+        <span style="font-size: 20px;">🛡️</span>
+        <span>4. Safety Level & Confidence Threshold</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="automation-approval-mode">Automation Safety Level</label>
+        <select id="automation-approval-mode" class="form-select">
+          <option value="draft_only" {% if not automation or automation.approval_mode == 'draft_only' %}selected{% endif %}>
+            Level 1 — Draft Only (AI prepares reply and saves as Gmail draft for review)
+          </option>
+          <option value="approval_required" {% if automation and automation.approval_mode == 'approval_required' %}selected{% endif %}>
+            Level 2 — Approval Required (AI prepares response and creates one-click approval alert)
+          </option>
+          <option value="trusted_auto" {% if automation and automation.approval_mode == 'trusted_auto' %}selected{% endif %}>
+            Level 3 — Trusted Automation (Auto-send immediately ONLY if confidence threshold is met)
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="automation-confidence">Minimum Confidence Threshold (%)</label>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <input type="range" id="automation-confidence" min="50" max="99" value="{{ automation.confidence_threshold if automation else 85 }}" class="form-control" style="flex: 1;" oninput="document.getElementById('confidence-val').innerText = this.value + '%'">
+          <span id="confidence-val" style="font-weight: 700; width: 50px;">{{ automation.confidence_threshold if automation else 85 }}%</span>
+        </div>
+        <small style="color: var(--text-muted); font-size: 11px;">If AI confidence falls below this score, it automatically falls back to saving a draft.</small>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.INITIAL_WORKFLOW_DATA = {
+  conditions: [
+    {% if conditions %}
+      {% for c in conditions %}
+        { field: {{ c.field | tojson }}, operator: {{ c.operator | tojson }}, value: {{ c.value | tojson }} },
+      {% endfor %}
+    {% endif %}
+  ],
+  actions: [
+    {% if actions %}
+      {% for a in actions %}
+        { action_type: {{ a.action_type | tojson }}, config: {% if a.config_json %}{{ a.config_json | safe }}{% else %}{}{% endif %} },
+      {% endfor %}
+    {% endif %}
+  ]
+};
+</script>
+<script src="{{ url_for('static', filename='js/automation.js') }}"></script>
+{% endblock %}

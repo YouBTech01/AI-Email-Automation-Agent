@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AI Email Automation Agent{% endblock %}
+{% block page_title %}Operational Overview{% endblock %}
+
+{% block content %}
+<!-- KPI Metrics Grid -->
+<div class="kpi-grid">
+  <div class="card kpi-card">
+    <div class="kpi-icon" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+    </div>
+    <div>
+      <div class="kpi-value">{{ unread_count }}</div>
+      <div class="kpi-label">Unread Inbox Emails</div>
+    </div>
+  </div>
+
+  <div class="card kpi-card">
+    <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83"/></svg>
+    </div>
+    <div>
+      <div class="kpi-value">{{ active_automations }}</div>
+      <div class="kpi-label">Active Automations</div>
+    </div>
+  </div>
+
+  <div class="card kpi-card">
+    <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div>
+      <div class="kpi-value">{{ total_runs_today }}</div>
+      <div class="kpi-label">Today's Automated Actions</div>
+    </div>
+  </div>
+
+  <div class="card kpi-card">
+    <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div>
+      <div class="kpi-value">{{ successful_runs_today }}</div>
+      <div class="kpi-label">Successful Executions</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Split View -->
+<div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px;">
+  <!-- Left: Recent Emails Preview -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Recent Inbox Messages</h2>
+      <a href="{{ url_for('dashboard.inbox') }}" class="btn btn-sm btn-outline">Open Full Inbox →</a>
+    </div>
+
+    {% if inbox_preview %}
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for m in inbox_preview %}
+          <div style="padding: 12px 14px; background: var(--bg-surface-secondary); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <div style="overflow: hidden; flex: 1;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-main);">{{ m.from.split('<')[0] }}</span>
+                {% if m.is_unread %}<span class="chip chip-primary" style="font-size: 10px; padding: 2px 6px;">NEW</span>{% endif %}
+              </div>
+              <div style="font-size: 0.8125rem; color: var(--text-main); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ m.subject }}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ m.snippet }}
+              </div>
+            </div>
+            <a href="{{ url_for('dashboard.inbox') }}" class="btn btn-sm btn-outline" style="flex-shrink: 0;">View</a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+        {% if not gmail_acc %}
+          <p>Gmail account is not connected yet.</p>
+          <a href="{{ url_for('settings.index') }}" class="btn btn-primary" style="margin-top: 12px;">Connect Gmail Account</a>
+        {% else %}
+          <p>No recent messages found in inbox.</p>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: Quick AI Assistant Actions & Automations -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    <!-- AI Quick Chat Prompt -->
+    <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(14, 165, 233, 0.1)); border: 1px solid var(--primary-container);">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <span style="font-size: 24px;">🤖</span>
+        <div>
+          <h3 style="font-size: 1rem; font-weight: 700;">AI Chat Assistant</h3>
+          <p style="font-size: 0.8125rem; color: var(--text-muted);">Control your email inbox using natural language.</p>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <a href="{{ url_for('chat.index') }}" class="btn btn-primary" style="width: 100%;">
+          Open AI Chat Interface
+        </a>
+      </div>
+    </div>
+
+    <!-- Active Automations Summary -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Automated Workflows</h2>
+        <a href="{{ url_for('automation.builder') }}" class="btn btn-sm btn-primary">+ New Rule</a>
+      </div>
+
+      {% if recent_automations %}
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          {% for a in recent_automations %}
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-surface-secondary); border-radius: var(--radius-md);">
+              <div>
+                <div style="font-weight: 600; font-size: 0.875rem;">{{ a.name }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Trigger: {{ a.trigger_type }} | Level: {{ a.approval_mode }}</div>
+              </div>
+              <span class="chip {% if a.status == 'ACTIVE' %}chip-success{% else %}chip-warning{% endif %}">
+                {{ a.status }}
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.8125rem;">
+          No automations configured yet.
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Recent Activity Trail -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Activity</h2>
+        <a href="{{ url_for('logs.index') }}" class="btn btn-sm btn-outline">View All Logs</a>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto;">
+        {% for l in recent_logs %}
+          <div style="font-size: 0.8125rem; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+            <div>
+              <span class="chip chip-primary" style="font-size: 10px; padding: 1px 5px;">{{ l.category }}</span>
+              <span style="margin-left: 6px; font-weight: 500;">{{ l.action }}</span>
+            </div>
+            <span style="color: var(--text-muted); font-size: 11px;">{{ l.created_at.split('T')[1].split('.')[0] if 'T' in l.created_at else l.created_at }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

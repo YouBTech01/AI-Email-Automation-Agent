@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Gmail Inbox - AI Email Automation Agent{% endblock %}
+{% block page_title %}Gmail Inbox{% endblock %}
+
+{% block content %}
+<div class="inbox-layout">
+  <!-- Left Column: Messages Catalog -->
+  <div class="inbox-list-pane">
+    <div class="inbox-list-header">
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <input type="text" id="inbox-search-input" class="form-control" placeholder="Search emails... (e.g. from:client)" style="padding: 8px 12px; font-size: 0.8125rem;">
+        <button class="btn btn-sm btn-primary" onclick="loadInboxMessages(document.getElementById('inbox-search-input').value)">🔍</button>
+      </div>
+
+      <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;">
+        <button class="btn btn-sm btn-secondary" onclick="loadInboxMessages('label:INBOX')">Inbox</button>
+        <button class="btn btn-sm btn-secondary" onclick="loadInboxMessages('is:unread')">Unread</button>
+        <button class="btn btn-sm btn-secondary" onclick="loadInboxMessages('is:starred')">Starred</button>
+        <button class="btn btn-sm btn-secondary" onclick="loadInboxMessages('is:sent')">Sent</button>
+      </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="inbox-messages-list" id="inbox-messages-list">
+      <!-- Populated dynamically via inbox.js -->
+    </div>
+  </div>
+
+  <!-- Right Column: Reader Pane -->
+  <div class="inbox-reader-pane" id="inbox-reader-pane">
+    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 0.9375rem;">
+      Select an email from the left to view conversation and AI actions.
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/inbox.js') }}"></script>
+{% endblock %}

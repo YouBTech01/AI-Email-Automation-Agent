@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - 404{% endblock %}
+
+{% block content %}
+<div style="min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+  <div style="font-size: 64px; margin-bottom: 16px;">🔍</div>
+  <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 10px;">404 - Page Not Found</h1>
+  <p style="color: var(--text-muted); max-width: 480px; margin-bottom: 24px;">
+    The page or email resource you requested could not be located.
+  </p>
+  <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">Return to Dashboard</a>
+</div>
+{% endblock %}

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}AI Email Automation Agent{% endblock %}</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/material.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="app-container">
+  {% if current_user %}
+  <!-- Sidebar Navigation -->
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+        <span>AI Email Agent</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        <span>Dashboard</span>
+      </a>
+
+      <a href="{{ url_for('chat.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('chat.') %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+        <span>AI Assistant Chat</span>
+      </a>
+
+      <a href="{{ url_for('dashboard.inbox') }}" class="nav-item {% if request.endpoint == 'dashboard.inbox' %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        <span>Gmail Inbox</span>
+      </a>
+
+      <a href="{{ url_for('automation.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('automation.') %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        <span>Automations</span>
+      </a>
+
+      <a href="{{ url_for('training.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('training.') %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <span>AI Training & Rules</span>
+      </a>
+
+      <a href="{{ url_for('templates_mgr.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('templates_mgr.') %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Templates</span>
+      </a>
+
+      <a href="{{ url_for('contacts.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Contacts</span>
+      </a>
+
+      <a href="{{ url_for('reports.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('reports.') %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        <span>Reports</span>
+      </a>
+
+      <a href="{{ url_for('logs.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('logs.') %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+        <span>Activity Logs</span>
+      </a>
+
+      <a href="{{ url_for('settings.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('settings.') %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Settings</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        v{{ app_version }}
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline" title="Sign Out">
+        Sign Out
+      </a>
+    </div>
+  </aside>
+  {% endif %}
+
+  <!-- Main Content Viewport -->
+  <div class="app-main">
+    {% if current_user %}
+    <!-- Top App Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <button class="btn btn-icon btn-outline" style="display: none;" id="sidebar-toggle" onclick="document.getElementById('app-sidebar').classList.toggle('open')">
+          ☰
+        </button>
+        <div class="header-title">{% block page_title %}Dashboard{% endblock %}</div>
+      </div>
+
+      <div class="header-status-pills">
+        {% if connected_gmail and connected_gmail.is_connected %}
+        <span class="chip chip-success" title="{{ connected_gmail.email }}">
+          ● Gmail: Connected ({{ connected_gmail.email.split('@')[0] }})
+        </span>
+        {% else %}
+        <a href="{{ url_for('settings.index') }}" class="chip chip-warning">
+          ▲ Gmail: Not Connected (Click to Setup)
+        </a>
+        {% endif %}
+
+        {% if active_ai_provider %}
+        <span class="chip chip-primary" title="{{ active_ai_provider.default_model }}">
+          🤖 AI: {{ active_ai_provider.display_name.split(' ')[0] }} ({{ active_ai_provider.default_model.split('/')[-1] }})
+        </span>
+        {% endif %}
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-icon btn-outline" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+          🌓
+        </button>
+        
+        <a href="{{ url_for('auth.profile') }}" class="user-profile-menu">
+          <div class="user-avatar">{{ current_user.username[0].upper() }}</div>
+          <span style="font-size: 0.875rem; font-weight: 500;">{{ current_user.username }}</span>
+        </a>
+      </div>
+    </header>
+    {% endif %}
+
+    <!-- Flash Messages Container -->
+    <div style="padding: 0 28px; margin-top: 14px;">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="snackbar snackbar-{{ category }}" style="position: static; margin-bottom: 10px; max-width: 100%;">
+              <span>{{ message }}</span>
+              <button style="background:none; border:none; color:inherit; cursor:pointer;" onclick="this.parentElement.remove()">✕</button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="app-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    {% if current_user %}
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+      <a href="{{ url_for('dashboard.index') }}" class="mobile-nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="{{ url_for('chat.index') }}" class="mobile-nav-item {% if request.endpoint and request.endpoint.startswith('chat.') %}active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+        <span>AI Chat</span>
+      </a>
+      <a href="{{ url_for('dashboard.inbox') }}" class="mobile-nav-item {% if request.endpoint == 'dashboard.inbox' %}active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        <span>Inbox</span>
+      </a>
+      <a href="{{ url_for('automation.index') }}" class="mobile-nav-item {% if request.endpoint and request.endpoint.startswith('automation.') %}active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83"/></svg>
+        <span>Rules</span>
+      </a>
+      <a href="{{ url_for('settings.index') }}" class="mobile-nav-item {% if request.endpoint and request.endpoint.startswith('settings.') %}active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Settings</span>
+      </a>
+    </nav>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Global Toast Container -->
+<div id="snackbar-container"></div>
+
+<!-- Core Scripts -->
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

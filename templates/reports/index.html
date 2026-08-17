@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Intelligence Reports - AI Email Automation Agent{% endblock %}
+{% block page_title %}Executive Email Intelligence Reports{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div>
+    <h1 style="font-size: 1.25rem; font-weight: 700;">Executive Intelligence Summaries</h1>
+    <p style="font-size: 0.875rem; color: var(--text-muted);">AI-generated daily digest of inbox activity, high-priority emails, and automated action stats.</p>
+  </div>
+  <button class="btn btn-primary" onclick="generateReport()">⚡ Generate Today's Report</button>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 20px;">
+  {% if reports %}
+    {% for r in reports %}
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">{{ r.title }}</h2>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Generated at: {{ r.created_at }}</div>
+          </div>
+          <span class="chip chip-primary">{{ r.report_type }}</span>
+        </div>
+
+        <div style="padding: 16px; background: var(--bg-surface-secondary); border-radius: var(--radius-md); font-size: 0.9375rem; line-height: 1.6; white-space: pre-wrap;">
+          {{ r.summary_text }}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted);">
+      <p>No intelligence reports generated yet.</p>
+      <button class="btn btn-primary" style="margin-top: 14px;" onclick="generateReport()">Generate First Daily Report</button>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function generateReport() {
+  showToast("Analyzing Gmail inbox and generating report...", "info");
+  try {
+    const res = await apiFetch('/reports/api/generate-daily', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      showToast("Report generated successfully!", "success");
+      setTimeout(() => window.location.reload(), 800);
+    } else {
+      showToast("Failed to generate report", "danger");
+    }
+  } catch (err) {
+    showToast("Error generating report", "danger");
+  }
+}
+</script>
+{% endblock %}

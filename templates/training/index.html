@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}AI Training & Rules - AI Email Automation Agent{% endblock %}
+{% block page_title %}AI Behavioral Training & Knowledge Base{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <p style="font-size: 0.875rem; color: var(--text-muted);">
+    Control how the AI writes drafts, answers questions, and adheres to strict company safety and tone rules without fine-tuning.
+  </p>
+</div>
+
+<!-- Tabs Container -->
+<div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px;">
+  <button class="btn btn-secondary tab-btn active" onclick="switchTrainingTab('rules', this)">📋 Behavioral Rules & Constraints</button>
+  <button class="btn btn-secondary tab-btn" onclick="switchTrainingTab('examples', this)">💬 Few-Shot Response Examples</button>
+  <button class="btn btn-secondary tab-btn" onclick="switchTrainingTab('knowledge', this)">📚 Knowledge Base & Policies</button>
+</div>
+
+<!-- TAB 1: Behavioral Rules -->
+<div id="tab-rules" class="tab-pane active">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Active Behavioral Rules & Tone Constraints</h2>
+      <button class="btn btn-primary btn-sm" onclick="openModal('rule-modal')">+ Add Rule</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for r in rules %}
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; padding: 14px; background: var(--bg-surface-secondary); border-radius: var(--radius-md);">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span class="chip chip-primary" style="font-size: 10px;">{{ r.rule_type.upper() }}</span>
+              <span style="font-weight: 600; font-size: 0.9375rem;">{{ r.title }}</span>
+            </div>
+            <p style="font-size: 0.875rem; color: var(--text-main);">{{ r.content }}</p>
+          </div>
+          <button class="btn btn-sm btn-outline" style="color: var(--danger);" onclick="deleteRule({{ r.id }})">Delete</button>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: Examples -->
+<div id="tab-examples" class="tab-pane" style="display: none;">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Few-Shot Response Training Examples</h2>
+      <button class="btn btn-primary btn-sm" onclick="openModal('example-modal')">+ Add Example</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      {% for e in examples %}
+        <div style="padding: 14px; background: var(--bg-surface-secondary); border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span class="chip chip-secondary" style="font-size: 10px;">{{ e.category }}</span>
+            <button class="btn btn-sm btn-outline" style="color: var(--danger);" onclick="deleteExample({{ e.id }})">Delete</button>
+          </div>
+          <div style="font-size: 0.875rem; margin-bottom: 6px;"><strong>User / Incoming:</strong> {{ e.user_input }}</div>
+          <div style="font-size: 0.875rem; color: var(--primary);"><strong>Ideal AI Response:</strong> {{ e.ideal_response }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: Knowledge Base -->
+<div id="tab-knowledge" class="tab-pane" style="display: none;">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Knowledge Base & Company Policies</h2>
+      <button class="btn btn-primary btn-sm" onclick="openModal('knowledge-modal')">+ Add Article</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for k in knowledge %}
+        <div style="padding: 14px; background: var(--bg-surface-secondary); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span class="chip chip-primary" style="font-size: 10px;">{{ k.category.upper() }}</span>
+              <span style="font-weight: 600; font-size: 0.9375rem;">{{ k.title }}</span>
+            </div>
+            <p style="font-size: 0.875rem; color: var(--text-main); white-space: pre-wrap;">{{ k.content }}</p>
+          </div>
+          <button class="btn btn-sm btn-outline" style="color: var(--danger);" onclick="deleteKnowledge({{ k.id }})">Delete</button>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Rule Modal -->
+<div class="modal-overlay" id="rule-modal">
+  <div class="modal-dialog">
+    <h3 style="margin-bottom: 16px;">Add Behavioral Rule</h3>
+    <form onsubmit="saveRule(event)">
+      <div class="form-group">
+        <label class="form-label">Rule Type</label>
+        <select id="rule-type" class="form-select">
+          <option value="instruction">Instruction (General Guideline)</option>
+          <option value="constraint">Constraint (Forbidden Action / Word Limit)</option>
+          <option value="tone">Tone & Style</option>
+          <option value="safety">Safety & Confidentiality</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" id="rule-title" class="form-control" placeholder="e.g. Refund Policy Safeguard" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rule Details / Constraint</label>
+        <textarea id="rule-content" class="form-control" rows="3" placeholder="e.g. Never promise refunds directly. Acknowledge and escalate to admin." required></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('rule-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Rule</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Example Modal -->
+<div class="modal-overlay" id="example-modal">
+  <div class="modal-dialog">
+    <h3 style="margin-bottom: 16px;">Add Training Example</h3>
+    <form onsubmit="saveExample(event)">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <input type="text" id="example-category" class="form-control" placeholder="e.g. customer_support" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Incoming User Message</label>
+        <textarea id="example-input" class="form-control" rows="2" placeholder="Where is my tracking number?" required></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ideal AI Response</label>
+        <textarea id="example-response" class="form-control" rows="3" placeholder="Your tracking number has been sent to your registered email..." required></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('example-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Example</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Knowledge Modal -->
+<div class="modal-overlay" id="knowledge-modal">
+  <div class="modal-dialog">
+    <h3 style="margin-bottom: 16px;">Add Knowledge Base Article</h3>
+    <form onsubmit="saveKnowledge(event)">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="knowledge-category" class="form-select">
+          <option value="faq">FAQ</option>
+          <option value="policy">Policy / Guideline</option>
+          <option value="company">Company Info</option>
+          <option value="product">Product Info</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" id="knowledge-title" class="form-control" placeholder="e.g. Support Working Hours" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Content / Knowledge Details</label>
+        <textarea id="knowledge-content" class="form-control" rows="4" placeholder="Standard hours are Mon-Fri 9am-6pm EST..." required></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('knowledge-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Article</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchTrainingTab(tabId, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+  btn.classList.add('active', 'btn-primary');
+  document.getElementById(`tab-${tabId}`).style.display = 'block';
+}
+
+async function saveRule(e) {
+  e.preventDefault();
+  const payload = {
+    rule_type: document.getElementById('rule-type').value,
+    title: document.getElementById('rule-title').value.trim(),
+    content: document.getElementById('rule-content').value.trim()
+  };
+  const res = await apiFetch('/training/api/rules', { method: 'POST', body: JSON.stringify(payload) });
+  if ((await res.json()).success) {
+    showToast("Rule saved!", "success");
+    window.location.reload();
+  }
+}
+
+async function deleteRule(id) {
+  if (!confirm("Delete rule?")) return;
+  const res = await apiFetch(`/training/api/rules/${id}`, { method: 'DELETE' });
+  if ((await res.json()).success) window.location.reload();
+}
+
+async function saveExample(e) {
+  e.preventDefault();
+  const payload = {
+    category: document.getElementById('example-category').value.trim(),
+    user_input: document.getElementById('example-input').value.trim(),
+    ideal_response: document.getElementById('example-response').value.trim()
+  };
+  const res = await apiFetch('/training/api/examples', { method: 'POST', body: JSON.stringify(payload) });
+  if ((await res.json()).success) window.location.reload();
+}
+
+async function deleteExample(id) {
+  if (!confirm("Delete example?")) return;
+  const res = await apiFetch(`/training/api/examples/${id}`, { method: 'DELETE' });
+  if ((await res.json()).success) window.location.reload();
+}
+
+async function saveKnowledge(e) {
+  e.preventDefault();
+  const payload = {
+    category: document.getElementById('knowledge-category').value,
+    title: document.getElementById('knowledge-title').value.trim(),
+    content: document.getElementById('knowledge-content').value.trim()
+  };
+  const res = await apiFetch('/training/api/knowledge', { method: 'POST', body: JSON.stringify(payload) });
+  if ((await res.json()).success) window.location.reload();
+}
+
+async function deleteKnowledge(id) {
+  if (!confirm("Delete knowledge item?")) return;
+  const res = await apiFetch(`/training/api/knowledge/${id}`, { method: 'DELETE' });
+  if ((await res.json()).success) window.location.reload();
+}
+</script>
+{% endblock %}
